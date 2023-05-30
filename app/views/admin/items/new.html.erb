@@ -1,5 +1,6 @@
  <%= render"layouts/error_messages", model: @item %>
 <div class="container">
+ <div class="row">
   <div class="col-md-10 mx-auto mt-5">
 
   <div class="row justify-content-center mb-3">
@@ -8,14 +9,34 @@
    </div>
   </div>
 
-    <div class="form d-flex justify-content-center" >
-    <%= form_with model: @item, url:admin_items_path, method: :post do |f|  %>
+  <!--ジャンル新規登録欄登録-->
+  <%= form_with model: @genre, url: admin_genres_path, class:"form-inline" do |f| %>
+  <div class="col-5 mx-auto form-group" id="new-genre-form"
+           style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.6); padding: 30px; z-index: 9999;">
+        <table class="table table-borderless">
+            <tr>
+              <td>
+               <div class="d-flex">
+                  <%= f.text_field :name, placeholder: "新規ジャンル名", class: "form-control", style: "width: 70%; margin-right: 2em; " %>
+                  <%= f.submit "ジャンル作成", class:"btn btn-primary", style: "width: 20%" %><br>
+               </div>
+                  <p class="text-white pt-3"> ※作成をやめる場合、以下より再度ジャンルをお選びください</p>
+              </td>
+            </tr>
+        </table>
+      </div>
+<% end %>
+
+  <div class="col-8 mx-auto form-group">
+  <%= form_with model: @item, url:admin_items_path, method: :post do |f|  %>
 
 <table class="table mt-5">
  <tbody>
   <tr>
    <td>商品画像</td>
-   <td><%= f.file_field :image,accept: "image/*" %></td>
+   <td><%= f.file_field :image, accept: "image/png, image/jpeg" %>
+   <!--プレビュー-->
+   <img class="mt-2" id="image-preview" style="max-width: 150px; border: solid thin lightgray; border-radius: 5px;"></td>
   </tr>
   <tr>
    <td>商品名</td>
@@ -27,7 +48,10 @@
   </tr>
   <tr>
    <td>ジャンル</td>
-   <td><%= f.collection_select :genre_id,Genre.all, :id, :name,include_blank: "--選択してください--"%></td>
+   <td><%= f.select :genre_id, options_for_select([["新しくジャンルを作成する","new"]].concat(@genres.map{|genre| [genre.name, genre.id]})),
+    { include_blank: "-- 選択してください --" },{required: true, class: "form-select", id: "genre-select" }%>
+    <!--自分の記述-->
+    <%#= f.collection_select :genre_id,Genre.all, :id, :name,include_blank: "--選択してください--"%></td>
   </tr>
   <tr>
    <td>税抜価格</td>
@@ -53,6 +77,57 @@
 
     <% end %>
 
-
+  </div>
   </div>
 </div>
+
+<!--「新しくジャンルを作成する」の選択時に発火-->
+<script>
+ // HTMLドキュメントが読み込まれた後に実行される関数
+ $(document).ready(function() {
+  var genreSelect = $("#genre-select");
+  var newGenreForm = $("#new-genre-form");
+
+  // ジャンル選択の内容がチェンジされたときに実行する処理
+    genreSelect.on("change",function() {
+      if (genreSelect.val() === "new") {
+        slideDown(newGenreForm);
+      } else {
+        slideUp(newGenreForm);
+      }
+    });
+
+   // 引数で指定された要素をスライドダウンさせる処理
+    function slideDown(element) {
+      element.fadeIn(300);
+    }
+
+   //引数で指定された要素をスライドアップさせる処理
+    function slideUp(element) {
+      element.fadeOut(300);
+    }
+  });
+</script>
+
+<!--画像ファイルが選択された際に発火し、画像のプレビューを表示-->
+<script>
+    // 選択した画像を表示させる関数。
+    function showPreview(event) {
+     // もし引数の中にファイルがあれば{}内の処理を行う
+            if (event.files) {
+             　　//ファイルを読み取るオブジェクトを生成
+                var reader = new FileReader();
+                // readerでデータの読み込み成功時、eにあるFileReaderのオブジェクトからtargetでshowPreviewの引数のDOM要素を取得。
+                // attrによって、#image-previewのsrc属性に、resultによる、targetで取得した要素に入ったファイルの読み取りデータが入る。
+                reader.onload = function (e) {
+                    $("#image-preview").attr("src", e.target.result);
+                };
+            //1番目に選択されたファイルを読み取る
+            reader.readAsDataURL(event.files[0]);
+            }
+        }
+        // フォームに変化があった時にshowPreview関数を呼び出し。引数は#item_image自身。
+        $("#item_image").change(function () {
+            showPreview(this);
+        });
+</script>
